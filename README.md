@@ -28,7 +28,7 @@ To start querying servers, we'll need an
 instance of `a2squery.A2SQuery`. We can either create one manually,
 or use a context manager. For this example, we will be using a context manager.
 
-```doctest
+```python
 
     >>> from a2squery import A2SQuery
 
@@ -41,7 +41,7 @@ Now, with the A2SQuery instance, we can query the game server.
 > When using `a2squery.A2SQuery` without a context manager.
 Remember to call `a2squery.A2SQuery.close()` when finished.
 
-```doctest
+```python
 
     >>> from a2squery import A2SQuery
 
