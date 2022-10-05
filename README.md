@@ -4,7 +4,7 @@ A2SQuery is a python implementation of [Valve's A2S protocol](https://developer.
 
 Docs
 ----
-[View the full A2SQuery documentation here.](https://google.com)
+[View the full A2SQuery documentation here.](https://a2squery.readthedocs.io/en/latest/)
 
 Features
 ----
