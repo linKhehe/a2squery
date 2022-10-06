@@ -8,6 +8,7 @@ class A2SMockServer:
 
     def __init__(self, host: str, port: int):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._socket.settimeout(10)
         self._socket.bind((host, port))
         self._should_exit = False
         self._use_goldsource_info = False
