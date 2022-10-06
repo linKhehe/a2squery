@@ -58,7 +58,7 @@ class A2SQuery:
         if body is None:
             body = ""
 
-        self._socket.send(struct.pack(f"<lB{len(body)}sl", -1, request_type.value, body.encode(), challenge))
+        self._socket.send(struct.pack("<lB{}sl".format(len(body)), -1, request_type.value, body.encode(), challenge))
 
         response_data = self._socket.recv(65536)
 
@@ -91,12 +91,9 @@ class A2SQuery:
         if response.type is ResponseType.InfoGoldSource:
             return Parser.parse_goldsource_info(response.data)
 
-        raise InvalidResponse(
-            f"Invalid server response type "
-            f"(got {response.type}, expected {ResponseType.InfoSource} or {ResponseType.InfoGoldSource})"
-        )
+        raise InvalidResponse("Invalid server response type (got {}, expected {} or {})".format(response.type, ResponseType.InfoSource, ResponseType.InfoGoldSource))
 
-    def player(self) -> list[Player]:
+    def player(self) -> typing.List[Player]:
         """Query the server's current players/bots.
 
         Returns:
@@ -107,12 +104,9 @@ class A2SQuery:
         if response.type is ResponseType.Player:
             return Parser.parse_players(response.data)
 
-        raise InvalidResponse(
-            f"Invalid server response type "
-            f"(got {response.type}, expected {ResponseType.Player})"
-        )
+        raise InvalidResponse("Invalid server response type (got {}, expected {})".format(response.type, ResponseType.Player))
 
-    def players(self) -> list[Player]:
+    def players(self) -> typing.List[Player]:
         """Query the server's current players/bots.
 
         This is an alias of A2SQuery.player().
@@ -122,7 +116,7 @@ class A2SQuery:
         """
         return self.player()
 
-    def rules(self) -> dict[str, str]:
+    def rules(self) -> typing.Dict[str, str]:
         """Query the server's rules/configuration variables in key/value pairs.
 
         The Console variables included are the ones marked with FCVAR_NOTIFY
@@ -136,7 +130,4 @@ class A2SQuery:
         if response.type is ResponseType.Rules:
             return Parser.parse_rules(response.data)
 
-        raise InvalidResponse(
-            f"Invalid server response type "
-            f"(got {response.type}, expected {ResponseType.Rules})"
-        )
+        raise InvalidResponse("Invalid server response type (got {}, expected {})".format(response.type, ResponseType.Rules))

@@ -10,7 +10,7 @@ authors = [
 ]
 description = "A2SQuery is a python implementation of Valve's A2S protocol."
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.5"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
