@@ -1,5 +1,5 @@
 A2SQuery [![A2SQuery](https://github.com/linKhehe/a2squery/actions/workflows/python-package.yml/badge.svg)](https://github.com/linKhehe/a2squery/actions/workflows/python-package.yml) [![Documentation Status](https://readthedocs.org/projects/a2squery/badge/?version=latest)](https://a2squery.readthedocs.io/en/latest/?badge=latest)
-====
+==========================================================================================================================================================================================================================================================================================================================================
 A2SQuery is a python implementation of [Valve's A2S protocol](https://developer.valvesoftware.com/wiki/Server_queries>).
 
 Docs
@@ -7,7 +7,7 @@ Docs
 [View the full A2SQuery documentation here.](https://a2squery.readthedocs.io/en/latest/)
 
 Features
-----
+--------
 A2SQuery can retrieve various information from any game
 server that implements the protocol. This includes all Source and GoldSource games.
 The library will handle connecting, parsing, and even automatically respond to challenge requests.
@@ -17,17 +17,17 @@ are impossible parse without knowing information about the server
 beforehand.
 
 Prerequisites
-----
+-------------
 - Python >= 3.6
 
 Installation
-----
+------------
 Install the library via pypi with
 
     pip install a2squery
 
 Getting Started
-----
+---------------
 To start querying servers, we'll need an
 instance of `a2squery.A2SQuery`. We can either create one manually,
 or use a context manager. For this example, we will be using a context manager.
@@ -65,7 +65,7 @@ Remember to call `a2squery.A2SQuery.close()` when finished.
 ```
 
 Supported Games
-----
+---------------
 
 | App ID | Game                                                                        | Notes                                                                               |
 |:------:|-----------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
