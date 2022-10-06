@@ -123,7 +123,7 @@ class SourceInfo(Data):
     game_id: Optional[int] = None
 
 
-@dataclass(slots=True)
+@dataclass
 class GoldSourceInfo(Data):
     """Represents a GoldSource server's info response.
 
@@ -212,7 +212,7 @@ class GoldSourceInfo(Data):
     mod_uses_custom_dll: Optional[bool] = None
 
 
-@dataclass(slots=True)
+@dataclass
 class Player(Data):
     """Represents a queried player.
 
