@@ -1,5 +1,6 @@
 import socket
 import unittest
+from random import randint
 from a2squery import A2SQuery, SourceInfo, GoldSourceInfo, Player
 import threading
 
@@ -74,11 +75,19 @@ class A2SMockServer:
 class TestA2SQuery(unittest.TestCase):
 
     def setUp(self):
-        self.server = A2SMockServer("0.0.0.0", 65098)
+        while True:
+            try:
+                port = randint(0, 65535)
+
+                self.server = A2SMockServer("0.0.0.0", port)
+                self.a2s = A2SQuery("0.0.0.0", port)
+
+                break
+            except OSError:
+                pass
+
         self.server_thread = threading.Thread(target=self.server.recv)
         self.server_thread.start()
-
-        self.a2s = A2SQuery("0.0.0.0", 65098)
 
     def test_source_info(self):
         self.server.set_use_goldsource_info(False)
