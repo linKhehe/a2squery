@@ -74,11 +74,11 @@ class A2SMockServer:
 class TestA2SQuery(unittest.TestCase):
 
     def setUp(self):
-        self.server = A2SMockServer("0.0.0.0", 1234)
+        self.server = A2SMockServer("0.0.0.0", 65098)
         self.server_thread = threading.Thread(target=self.server.recv)
         self.server_thread.start()
 
-        self.a2s = A2SQuery("0.0.0.0", 1234)
+        self.a2s = A2SQuery("0.0.0.0", 65098)
 
     def test_source_info(self):
         self.server.set_use_goldsource_info(False)
