@@ -32,7 +32,8 @@ class ServerType(Enum):
 
     Dedicated = "d"
     NonDedicated = "l"
-    SourceTV = "p"
+    HLTV = "p"
+    SourceTV = "P"
     Unknown = "unknown"
 
     @classmethod

@@ -7,30 +7,32 @@ __all__ = ("SourceInfo", "GoldSourceInfo", "Player")
 
 class Data:
 
+    __annotations__ = []
+
     def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            if k in self.__annotations__:
-                setattr(self, k, v)
+        for key, value in kwargs.items():
+            if key in self.__annotations__:
+                setattr(self, key, value)
             else:
-                raise KeyError(k)
+                raise KeyError(key)
 
     def __iter__(self):
-        for k in self.__annotations__:
-            yield k, getattr(self, k)
+        for key in self.__annotations__:
+            yield key, getattr(self, key)
 
-    def __getitem__(self, item):
-        if item in self.__annotations__:
-            return getattr(self, item)
-        raise KeyError(item)
+    def __getitem__(self, key):
+        if key in self.__annotations__:
+            return getattr(self, key)
+        raise KeyError(key)
 
     def keys(self):
         return self.__annotations__
 
     def values(self):
-        return [getattr(self, k) for k in self.__annotations__]
+        return [getattr(self, key) for key in self.__annotations__]
 
     def items(self):
-        return [(k, getattr(self, k)) for k in self.__annotations__]
+        return [(key, getattr(self, key)) for key in self.__annotations__]
 
     def get(self, key, default=None):
         return getattr(self, key) or default
@@ -38,7 +40,7 @@ class Data:
 
 class SourceInfo(Data):
     """Represents a Source server's information response
-    
+
     Attributes:
         protocol: The version of the protocol used by the server.
         name: The hostname of the server. This is what you see on a server list.
@@ -53,10 +55,10 @@ class SourceInfo(Data):
         environment: The operating system the server is running. For Source servers this can be Linux, Mac, or Windows.
         password: Whether of not the server is password locked.
         vac: Indicates whether the server is protected by VAC or not.
-    
+
         version: The version of the game installed on the server.
         extra_data_flag: This field specifies what extra data is included in the packet.
-    
+
         mode:
             The game mode the server is currently running.
 

@@ -92,13 +92,18 @@ class TestA2SQuery(unittest.TestCase):
     def test_source_info(self):
         self.server.set_use_goldsource_info(False)
         self.assertTrue(isinstance(self.a2s.info(), SourceInfo))
+        self.assertTrue(dict(self.a2s.info())["name"] == "Server Name")
 
     def test_goldsource_info(self):
         self.server.set_use_goldsource_info(True)
         self.assertTrue(isinstance(self.a2s.info(), GoldSourceInfo))
+        self.assertTrue(dict(self.a2s.info())["name"] == "name")
+
+        dict(self.a2s.info())
 
     def test_players(self):
         self.assertTrue(isinstance(self.a2s.players()[1], Player))
+        self.assertTrue(dict(self.a2s.players()[0])["name"] == "Player 0")
 
     def test_rules(self):
         self.assertTrue(self.a2s.rules().get("a2squery") == "bruh momentum")

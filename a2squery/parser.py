@@ -86,12 +86,12 @@ class Parser:
             mode = None
             witnesses = None
             duration = None
-    
+
             if app_id == 2400:
                 mode = parser.read_byte()
                 witnesses = parser.read_byte()
                 duration = parser.read_byte()
-    
+
             version = parser.read_string()
             extra_data_flag = parser.read_byte()
 
@@ -101,23 +101,23 @@ class Parser:
             spectator_name = None
             keywords = None
             game_id = None
-    
+
             if extra_data_flag & 0x80:
                 port = parser.read_short()
-    
+
             if extra_data_flag & 0x10:
                 steam_id = parser.read_long_long()
-    
+
             if extra_data_flag & 0x40:
                 spectator_port = parser.read_short()
                 spectator_name = parser.read_string()
-    
+
             if extra_data_flag & 0x20:
                 keywords = parser.read_string()
-    
+
             if extra_data_flag & 0x01:
                 game_id = parser.read_long_long()
-    
+
             return SourceInfo(
                 protocol=protocol, name=name, map=info_map,
                 folder=folder, game=game, app_id=app_id,
@@ -128,7 +128,7 @@ class Parser:
                 port=port, steam_id=steam_id, spectator_port=spectator_port,
                 spectator_name=spectator_name, keywords=keywords, game_id=game_id,
             )
-            
+
     @classmethod
     def parse_goldsource_info(cls, data: bytes) -> GoldSourceInfo:
         with cls(data) as parser:
