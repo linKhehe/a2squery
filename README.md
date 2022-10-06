@@ -1,4 +1,4 @@
-A2SQuery [![A2SQuery](https://github.com/linKhehe/a2squery/actions/workflows/python-package.yml/badge.svg)](https://github.com/linKhehe/a2squery/actions/workflows/python-package.yml) [![Documentation Status](https://readthedocs.org/projects/a2squery/badge/?version=latest)](https://a2squery.readthedocs.io/en/latest/?badge=latest)
+A2SQuery [![A2SQuery](https://github.com/linKhehe/a2squery/actions/workflows/python-test.yml/badge.svg)](https://github.com/linKhehe/a2squery/actions/workflows/python-package.yml) [![Documentation Status](https://readthedocs.org/projects/a2squery/badge/?version=latest)](https://a2squery.readthedocs.io/en/latest/?badge=latest)
 ==========================================================================================================================================================================================================================================================================================================================================
 A2SQuery is a python implementation of [Valve's A2S protocol](https://developer.valvesoftware.com/wiki/Server_queries>).
 
