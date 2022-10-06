@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import Optional
 
 from .enums import Environment, ServerType
@@ -7,6 +6,13 @@ __all__ = ("SourceInfo", "GoldSourceInfo", "Player")
 
 
 class Data:
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            if k in self.__annotations__:
+                setattr(self, k, v)
+            else:
+                raise KeyError(k)
 
     def __iter__(self):
         for k in self.__annotations__:
@@ -30,7 +36,6 @@ class Data:
         return getattr(self, key) or default
 
 
-@dataclass
 class SourceInfo(Data):
     """Represents a Source server's information response
     
@@ -123,7 +128,6 @@ class SourceInfo(Data):
     game_id: Optional[int] = None
 
 
-@dataclass
 class GoldSourceInfo(Data):
     """Represents a GoldSource server's info response.
 
@@ -212,7 +216,6 @@ class GoldSourceInfo(Data):
     mod_uses_custom_dll: Optional[bool] = None
 
 
-@dataclass
 class Player(Data):
     """Represents a queried player.
 
