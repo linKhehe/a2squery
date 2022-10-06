@@ -1,2 +1,3 @@
+sphinx
 enum_tools[sphinx]
 sphinx-book-theme
