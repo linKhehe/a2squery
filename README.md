@@ -16,6 +16,10 @@ The library will handle connecting, parsing, and even automatically respond to c
 are impossible parse without knowing information about the server
 beforehand.
 
+Prerequisites
+----
+- Python >= 3.6
+
 Installation
 ----
 Install the library via pypi with
