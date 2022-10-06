@@ -9,28 +9,28 @@ __all__ = ("SourceInfo", "GoldSourceInfo", "Player")
 class Data:
 
     def __iter__(self):
-        for k in self.__slots__:
+        for k in self.__annotations__:
             yield k, getattr(self, k)
 
     def __getitem__(self, item):
-        if item in self.__slots__:
+        if item in self.__annotations__:
             return getattr(self, item)
         raise KeyError(item)
 
     def keys(self):
-        return self.__slots__
+        return self.__annotations__
 
     def values(self):
-        return [getattr(self, k) for k in self.__slots__]
+        return [getattr(self, k) for k in self.__annotations__]
 
     def items(self):
-        return [(k, getattr(self, k)) for k in self.__slots__]
+        return [(k, getattr(self, k)) for k in self.__annotations__]
 
     def get(self, key, default=None):
         return getattr(self, key) or default
 
 
-@dataclass(slots=True)
+@dataclass
 class SourceInfo(Data):
     """Represents a Source server's information response
     

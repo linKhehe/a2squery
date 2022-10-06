@@ -1,4 +1,4 @@
-A2SQuery
+A2SQuery [![A2SQuery](https://github.com/linKhehe/a2squery/actions/workflows/python-package.yml/badge.svg)](https://github.com/linKhehe/a2squery/actions/workflows/python-package.yml)
 ====
 A2SQuery is a python implementation of [Valve's A2S protocol](https://developer.valvesoftware.com/wiki/Server_queries>).
 
