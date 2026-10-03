@@ -13,7 +13,7 @@ server that implements the protocol. This includes all Source and GoldSource gam
 The library will handle connecting, parsing, and even automatically respond to challenge requests.
 
 > A2SQuery does not support multi-packet responses as they
-are impossible parse without knowing information about the server
+are impossible to parse without knowing information about the server
 beforehand.
 
 Prerequisites
