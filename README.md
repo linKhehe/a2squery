@@ -1,6 +1,6 @@
 A2SQuery [![A2SQuery](https://github.com/linKhehe/a2squery/actions/workflows/python-test.yml/badge.svg)](https://github.com/linKhehe/a2squery/actions/workflows/python-package.yml) [![Documentation Status](https://readthedocs.org/projects/a2squery/badge/?version=latest)](https://a2squery.readthedocs.io/en/latest/?badge=latest)
 ==========================================================================================================================================================================================================================================================================================================================================
-A2SQuery is a python implementation of [Valve's A2S protocol](https://developer.valvesoftware.com/wiki/Server_queries).
+A2SQuery is a Python implementation of [Valve's A2S protocol](https://developer.valvesoftware.com/wiki/Server_queries).
 
 Docs
 ----
@@ -10,7 +10,7 @@ Features
 --------
 A2SQuery can retrieve various information from any game
 server that implements the protocol. This includes all Source and GoldSource games.
-The library will handle connecting, parsing, and even automatically respond to challenge requests.
+The library will handle connections, parsing, and challenge requests.
 
 > A2SQuery does not support multi-packet responses as they
 are impossible to parse without knowing information about the server
