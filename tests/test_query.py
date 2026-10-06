@@ -1,18 +1,19 @@
 import socket
 import unittest
-from random import randint
 from a2squery import A2SQuery, SourceInfo, GoldSourceInfo, Player
 import threading
 
 
 class A2SMockServer:
 
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._socket.settimeout(1)
-        self._socket.bind((host, port))
+        self._socket.bind((host, 0))
         self._should_exit = False
         self._use_goldsource_info = False
+
+        self.port = self._socket.getsockname()[1]
 
     def set_use_goldsource_info(self, v: bool):
         self._use_goldsource_info = v
@@ -28,6 +29,8 @@ class A2SMockServer:
 
             try:
                 data, client = self._socket.recvfrom(65535)
+            except socket.timeout:
+                continue
             except OSError as exception:
                 if self._should_exit:
                     return
@@ -75,18 +78,10 @@ class A2SMockServer:
 class TestA2SQuery(unittest.TestCase):
 
     def setUp(self):
-        while True:
-            try:
-                port = randint(0, 65535)
+        self.server = A2SMockServer("127.0.0.1")
+        self.a2s = A2SQuery("127.0.0.1", self.server.port)
 
-                self.server = A2SMockServer("0.0.0.0", port)
-                self.a2s = A2SQuery("0.0.0.0", port)
-
-                break
-            except OSError:
-                pass
-
-        self.server_thread = threading.Thread(target=self.server.recv)
+        self.server_thread = threading.Thread(target=self.server.recv, daemon=True)
         self.server_thread.start()
 
     def test_source_info(self):
@@ -99,10 +94,8 @@ class TestA2SQuery(unittest.TestCase):
         self.assertTrue(isinstance(self.a2s.info(), GoldSourceInfo))
         self.assertTrue(dict(self.a2s.info())["name"] == "name")
 
-        dict(self.a2s.info())
-
     def test_players(self):
-        self.assertTrue(isinstance(self.a2s.players()[1], Player))
+        self.assertTrue(isinstance(self.a2s.players()[1], Player)) # type: ignore
         self.assertTrue(dict(self.a2s.players()[0])["name"] == "Player 0")
 
     def test_rules(self):

@@ -1,5 +1,6 @@
 import struct
-import typing
+from types import TracebackType
+from typing import Optional, Type, List, Dict
 
 from .data import SourceInfo, GoldSourceInfo, Player
 from .enums import ServerType, Environment
@@ -17,7 +18,7 @@ class Parser:
         self.index = 0
         return self
 
-    def __exit__(self, exc_val, exc_type, exc_tb):
+    def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]):
         if not exc_val:
             return True
         return False
@@ -174,8 +175,8 @@ class Parser:
         )
 
     @classmethod
-    def parse_players(cls, data: bytes) -> typing.List[Player]:
-        players = []
+    def parse_players(cls, data: bytes) -> List[Player]:
+        players: List[Player] = []
 
         with cls(data) as parser:
             player_count = parser.read_byte()
@@ -196,7 +197,7 @@ class Parser:
         return players
 
     @classmethod
-    def parse_rules(cls, data: bytes) -> typing.Dict[str, str]:
+    def parse_rules(cls, data: bytes) -> Dict[str, str]:
         with cls(data) as parser:
             rule_count = parser.read_short()
             rules = dict((parser.read_string(), parser.read_string()) for _ in range(rule_count))

@@ -1,6 +1,7 @@
 import socket
 import struct
-import typing
+from types import TracebackType
+from typing import Optional, Type, Union, List, Dict
 
 from .data import SourceInfo, GoldSourceInfo, Player
 from .exceptions import InvalidResponse, SocketClosed
@@ -41,17 +42,20 @@ class A2SQuery:
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]):
         if exc_val:
             raise exc_val
         self.close()
 
     def close(self) -> None:
         """Close the query socket. All requests after this will fail."""
+        if self._socket is None:
+            raise SocketClosed("The socket is already closed.")
+
         self._socket.close()
         self._socket = None
 
-    def _request(self, request_type: RequestType, body: str = None, challenge: int = -1) -> QueryResponse:
+    def _request(self, request_type: RequestType, body: Optional[str] = None, challenge: int = -1) -> QueryResponse:
         if self._socket is None:
             raise SocketClosed("The socket has been closed. No more requests can be made.")
 
@@ -78,7 +82,7 @@ class A2SQuery:
 
         return response
 
-    def info(self) -> typing.Union[SourceInfo, GoldSourceInfo]:
+    def info(self) -> Union[SourceInfo, GoldSourceInfo]:
         """Query general information about the server.
 
         Returns:
@@ -93,7 +97,7 @@ class A2SQuery:
 
         raise InvalidResponse("Invalid server response type (got {}, expected {} or {})".format(response.type, ResponseType.InfoSource, ResponseType.InfoGoldSource))
 
-    def player(self) -> typing.List[Player]:
+    def player(self) -> List[Player]:
         """Query the server's current players/bots.
 
         Returns:
@@ -106,7 +110,7 @@ class A2SQuery:
 
         raise InvalidResponse("Invalid server response type (got {}, expected {})".format(response.type, ResponseType.Player))
 
-    def players(self) -> typing.List[Player]:
+    def players(self) -> List[Player]:
         """Query the server's current players/bots.
 
         This is an alias of A2SQuery.player().
@@ -116,7 +120,7 @@ class A2SQuery:
         """
         return self.player()
 
-    def rules(self) -> typing.Dict[str, str]:
+    def rules(self) -> Dict[str, str]:
         """Query the server's rules/configuration variables in key/value pairs.
 
         The Console variables included are the ones marked with FCVAR_NOTIFY

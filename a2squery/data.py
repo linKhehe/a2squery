@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional, Tuple
 
 from .enums import Environment, ServerType
 
@@ -7,34 +7,38 @@ __all__ = ("SourceInfo", "GoldSourceInfo", "Player")
 
 class Data:
 
-    __annotations__ = []
+    __field_names__: Tuple[str, ...]
 
-    def __init__(self, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any):
+        super().__init_subclass__(**kwargs)
+        cls.__field_names__ = tuple(cls.__annotations__.keys())
+
+    def __init__(self, **kwargs: Any):
         for key, value in kwargs.items():
-            if key in self.__annotations__:
+            if key in self.__field_names__:
                 setattr(self, key, value)
             else:
                 raise KeyError(key)
 
     def __iter__(self):
-        for key in self.__annotations__:
+        for key in self.__field_names__:
             yield key, getattr(self, key)
 
-    def __getitem__(self, key):
-        if key in self.__annotations__:
+    def __getitem__(self, key: str):
+        if key in self.__field_names__:
             return getattr(self, key)
         raise KeyError(key)
 
     def keys(self):
-        return self.__annotations__
+        return self.__field_names__
 
     def values(self):
-        return [getattr(self, key) for key in self.__annotations__]
+        return [getattr(self, key) for key in self.__field_names__]
 
     def items(self):
-        return [(key, getattr(self, key)) for key in self.__annotations__]
+        return [(key, getattr(self, key)) for key in self.__field_names__]
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: Optional[Any] = None):
         return getattr(self, key) or default
 
 

@@ -37,9 +37,10 @@ class ServerType(Enum):
     Unknown = "unknown"
 
     @classmethod
-    def _missing_(cls, value: str):
-        if value.lower() != value:
-            return cls(value.lower())
+    def _missing_(cls, value: object):
+        if type(value) is str:
+            if value.lower() != value:
+                return cls(value.lower())
         return cls.Unknown
 
 
@@ -51,9 +52,10 @@ class Environment(Enum):
     Unknown = "unknown"
 
     @classmethod
-    def _missing_(cls, value: str):
-        if value == "o":
-            return cls.Mac
-        if value.lower() != value:
-            return cls(value.lower())
+    def _missing_(cls, value: object):
+        if type(value) is str:
+            if value == "o":
+                return cls.Mac
+            if value.lower() != value:
+                return cls(value.lower())
         return cls.Unknown
