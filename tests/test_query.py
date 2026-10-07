@@ -1,7 +1,21 @@
+import asyncio
 import socket
 import unittest
-from a2squery import A2SQuery, SourceInfo, GoldSourceInfo, Player
+import typing
+from a2squery import A2SQuery, AsyncA2SQuery, SourceInfo, GoldSourceInfo, Player
 import threading
+
+@typing.no_type_check
+def async_test(coro): 
+    @typing.no_type_check
+    def wrapper(self, *args, **kwargs):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(coro(self, *args, **kwargs))
+        finally:
+            loop.close()
+    return wrapper
 
 
 class A2SMockServer:
@@ -82,6 +96,49 @@ class A2SMockServer:
                         b"\xff\xff\xff\xffEB\x00a2squery\x00bruh momentum\x00allow_spectators\x001\x00amx_client_languages\x001\x00amx_language\x00en\x00amx_nextmap\x00crossfire\x00amx_timeleft\x0000:00\x00amxmodx_version\x001.8.2\x00br_unlock\x00v1.0\x00coop\x000\x00deathmatch\x001\x00decalfrequency\x0040\x00dp_version\x000.9.548\x00edgefriction\x002\x00hackdetector_version\x000.15.328.lite\x00lambda_ranks\x00enabled\x00lambda_status\x00loaded\x00lambda_version\x000.10g\x00max_queries_sec\x001\x00max_queries_sec_global\x001\x00max_queries_window\x001\x00metamod_version\x001.21p37\x00mp_allowmonsters\x000\x00mp_autocrosshair\x001\x00mp_bunnyhop\x001\x00mp_chattime\x0010\x00mp_consistency\x001\x00mp_falldamage\x000\x00mp_flashlight\x000\x00mp_footsteps\x001\x00mp_forcerespawn\x001\x00mp_fraglimit\x000\x00mp_fragsleft\x000\x00mp_friendlyfire\x000\x00mp_logfile\x001\x00mp_selfgauss\x000\x00mp_teamlist\x00hgrunt;scientist\x00mp_teamplay\x000\x00mp_timeleft\x000\x00mp_timelimit\x000\x00mp_weaponstay\x000\x00mp_welcomecam\x000\x00pausable\x000\x00sv_accelerate\x0010\x00sv_aim\x000\x00sv_airaccelerate\x00100\x00sv_allowupload\x001\x00sv_bounce\x001\x00sv_cheats\x000\x00sv_clienttrace\x003.5\x00sv_contact\x00discord.gg/bNzhcdf\x00sv_friction\x004\x00sv_gravity\x00800\x00sv_logblocks\x000\x00sv_maxrate\x0050000\x00sv_maxspeed\x00320\x00sv_minrate\x000\x00sv_password\x000\x00sv_proxies\x001\x00sv_stepsize\x0018\x00sv_stopspeed\x00100\x00sv_uploadmax\x000.5\x00sv_voiceenable\x001\x00sv_wateraccelerate\x0010\x00sv_waterfriction\x001\x00VTC_Version\x002017RC5\x00whb_version\x001.5.697\x00",
                         client
                     )
+
+
+class TestAsyncA2SQuery(unittest.TestCase):
+
+    def setUp(self):
+        self.server = A2SMockServer("127.0.0.1")
+
+        self.server_thread = threading.Thread(target=self.server.recv, daemon=True)
+        self.server_thread.start()
+
+    @async_test
+    async def test_async_source_info(self):
+        self.server.set_use_goldsource_info(False)
+        async with AsyncA2SQuery("127.0.0.1", self.server.port) as a2s:
+            self.assertTrue(isinstance(await a2s.info(), SourceInfo))
+            self.assertTrue((await a2s.info()).name == "Server Name")
+
+    @async_test
+    async def test_async_goldsource_info(self):
+        self.server.set_use_goldsource_info(True)
+        async with AsyncA2SQuery("127.0.0.1", self.server.port) as a2s:
+            self.assertTrue(isinstance(await a2s.info(), GoldSourceInfo))
+            self.assertTrue((await a2s.info()).name == "name")
+
+    @async_test
+    async def test_async_players(self):
+        async with AsyncA2SQuery("127.0.0.1", self.server.port) as a2s:
+            self.assertTrue(isinstance((await a2s.players())[1], Player)) # type: ignore
+            self.assertTrue((await a2s.players())[0].name == "Player 0")
+
+    @async_test
+    async def test_async_rules(self):
+        async with AsyncA2SQuery("127.0.0.1", self.server.port) as a2s:
+            self.assertTrue((await a2s.rules()).get("a2squery") == "bruh momentum")
+
+    @async_test
+    async def test_async_compression(self):
+        async with AsyncA2SQuery("127.0.0.1", self.server.port) as a2s:
+            self.server.set_use_compression(True)
+            self.assertTrue((await a2s.rules()).get("a2squery") == "compressed_success")
+
+    def tearDown(self):
+        self.server.close()
 
 
 class TestA2SQuery(unittest.TestCase):

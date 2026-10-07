@@ -1,4 +1,5 @@
-from .query import A2SQuery
+from .async_query import AsyncA2SQuery
+from .sync_query import A2SQuery
 from .data import SourceInfo, GoldSourceInfo, Player
 from .enums import ServerType, Environment
 
@@ -10,5 +11,6 @@ __version__ = "1.0.0"
 
 __all__ = (
     "A2SQuery", "SourceInfo", "GoldSourceInfo",
-    "Player", "ServerType", "Environment"
+    "Player", "ServerType", "Environment",
+    "AsyncA2SQuery"
 )
