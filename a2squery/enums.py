@@ -1,9 +1,15 @@
+from typing import Any
 from enum import Enum
 
 __all__ = (
-    "RequestType", "ResponseType", "ResponseFormat",
+    "BatchResponseEngine","RequestType", "ResponseType", "ResponseFormat",
     "ServerType", "Environment"
 )
+
+
+class BatchResponseEngine(Enum):
+    GoldSource = 0
+    Source = 1
 
 
 class RequestType(Enum):
@@ -20,6 +26,11 @@ class ResponseType(Enum):
     InfoGoldSource = 0x6D
     Player = 0x44
     Rules = 0x45
+    Unknown = 0xFF
+
+    @classmethod
+    def _missing_(cls, value: Any):
+        return cls.Unknown
 
 
 class ResponseFormat(Enum):

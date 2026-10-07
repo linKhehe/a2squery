@@ -1,48 +1,13 @@
-from typing import Any, Optional, Tuple
+from dataclasses import dataclass
+from typing import Optional
 
 from .enums import Environment, ServerType
 
 __all__ = ("SourceInfo", "GoldSourceInfo", "Player")
 
 
-class Data:
-
-    __field_names__: Tuple[str, ...]
-
-    def __init_subclass__(cls, **kwargs: Any):
-        super().__init_subclass__(**kwargs)
-        cls.__field_names__ = tuple(cls.__annotations__.keys())
-
-    def __init__(self, **kwargs: Any):
-        for key, value in kwargs.items():
-            if key in self.__field_names__:
-                setattr(self, key, value)
-            else:
-                raise KeyError(key)
-
-    def __iter__(self):
-        for key in self.__field_names__:
-            yield key, getattr(self, key)
-
-    def __getitem__(self, key: str):
-        if key in self.__field_names__:
-            return getattr(self, key)
-        raise KeyError(key)
-
-    def keys(self):
-        return self.__field_names__
-
-    def values(self):
-        return [getattr(self, key) for key in self.__field_names__]
-
-    def items(self):
-        return [(key, getattr(self, key)) for key in self.__field_names__]
-
-    def get(self, key: str, default: Optional[Any] = None):
-        return getattr(self, key) or default
-
-
-class SourceInfo(Data):
+@dataclass
+class SourceInfo:
     """Represents a Source server's information response
 
     Attributes:
@@ -134,7 +99,8 @@ class SourceInfo(Data):
     game_id: Optional[int] = None
 
 
-class GoldSourceInfo(Data):
+@dataclass
+class GoldSourceInfo:
     """Represents a GoldSource server's info response.
 
     Attributes:
@@ -222,7 +188,8 @@ class GoldSourceInfo(Data):
     mod_uses_custom_dll: Optional[bool] = None
 
 
-class Player(Data):
+@dataclass
+class Player:
     """Represents a queried player.
 
     Attributes:

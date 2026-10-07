@@ -1,6 +1,6 @@
 A2SQuery [![A2SQuery](https://github.com/linKhehe/a2squery/actions/workflows/python-test.yml/badge.svg)](https://github.com/linKhehe/a2squery/actions/workflows/python-package.yml) [![Documentation Status](https://readthedocs.org/projects/a2squery/badge/?version=latest)](https://a2squery.readthedocs.io/en/latest/?badge=latest)
 ==========================================================================================================================================================================================================================================================================================================================================
-A2SQuery is a python implementation of [Valve's A2S protocol](https://developer.valvesoftware.com/wiki/Server_queries).
+A2SQuery is a Python implementation of [Valve's A2S protocol](https://developer.valvesoftware.com/wiki/Server_queries).
 
 Docs
 ----
@@ -8,17 +8,16 @@ Docs
 
 Features
 --------
-A2SQuery can retrieve various information from any game
-server that implements the protocol. This includes all Source and GoldSource games.
-The library will handle connecting, parsing, and even automatically respond to challenge requests.
-
-> A2SQuery does not support multi-packet responses as they
-are impossible to parse without knowing information about the server
-beforehand.
+- Multi-packet response support for Source and GoldSource engines.
+- Supports BZIP2 compressed responses.
+- Handles MTU edge cases for Source games.
+- Fully type hinted (PEP 561 compliant) with modern design and `dataclass` response objects.
+- Enforces limits on challenge-response handshakes to prevent infinite recursion loops.
+- Zero dependencies.
 
 Prerequisites
 -------------
-- Python >= 3.6
+- Python >= 3.7
 
 Installation
 ------------
@@ -26,45 +25,33 @@ Install the library via pypi with
 
     pip install a2squery
 
-Getting Started
+Example
 ---------------
-To start querying servers, we'll need an
-instance of `a2squery.A2SQuery`. We can either create one manually,
-or use a context manager. For this example, we will be using a context manager.
-
-```python
-
-    >>> from a2squery import A2SQuery
-
-    >>> with A2SQuery("127.0.0.1", 27015) as a2s:
-
-```
-
-Now, with the A2SQuery instance, we can query the game server.
-
 > When using `a2squery.A2SQuery` without a context manager.
-Remember to call `a2squery.A2SQuery.close()` when finished.
+Remember to call `a2squery.A2SQuery.close()` when finished to close the socket.
 
 ```python
 
-    >>> from a2squery import A2SQuery
+from a2squery import A2SQuery
 
-    >>> with A2SQuery("127.0.0.1", 27015) as a2s:
-    >>>     print(a2s.info())
+with A2SQuery("127.0.0.1", 27015) as a2s:
+    print(a2s.info())
+    # print(a2s.rules())
+    # print(a2s.players())
 
-    SourceInfo(
-        protocol=17, name="Awp Bhop", map="awp_iceworld",
-        folder="csgo", game="Counter-Strike: Global Offensive",
-        app_id=730, players=43, max_players=64, bots=0,
-        server_type=ServerType.Dedicated, environment=Environment.Linux,
-        password=False, vac=True, version="1.38.4.4", extra_data_flag=177,
-        mode=None, witnesses=None, duration=None,
-        port=27015, steam_id=85568392924437989, spectator_port=None,
-        spectator_name=None, keywords="awp,bhop,a2squeryiscool", game_id=730
-    )
+    # SourceInfo(
+    #     protocol=17, name="Awp Bhop", map="awp_iceworld",
+    #     folder="csgo", game="Counter-Strike: Global Offensive",
+    #     app_id=730, players=43, max_players=64, bots=0,
+    #     server_type=ServerType.Dedicated, environment=Environment.Linux,
+    #     password=False, vac=True, version="1.38.4.4", extra_data_flag=177,
+    #     mode=None, witnesses=None, duration=None,
+    #     port=27015, steam_id=85568392924437989, spectator_port=None,
+    #     spectator_name=None, keywords="awp,bhop,a2squeryiscool", game_id=730
+    # )
 ```
 
-Supported Games
+Supported Games *(Non-Exhaustive)*
 ---------------
 
 | App ID | Game                                                                        | Notes                                                                               |
