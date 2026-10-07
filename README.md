@@ -8,22 +8,12 @@ Docs
 
 Features
 --------
-<<<<<<< HEAD
 - Multi-packet response support for Source and GoldSource engines.
 - Supports BZIP2 compressed responses.
 - Handles MTU edge cases for Source games.
 - Fully type hinted (PEP 561 compliant) with modern design and `dataclass` response objects.
 - Enforces limits on challenge-response handshakes to prevent infinite recursion loops.
 - Zero dependencies.
-=======
-A2SQuery can retrieve various information from any game
-server that implements the protocol. This includes all Source and GoldSource games.
-The library will handle connections, parsing, and challenge requests.
-
-> A2SQuery does not support multi-packet responses as they
-are impossible to parse without knowing information about the server
-beforehand.
->>>>>>> 01443bf8b067038be1a30fa6f5757fc93cbe88f7
 
 Prerequisites
 -------------
