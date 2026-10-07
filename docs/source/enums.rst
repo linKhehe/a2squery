@@ -1,8 +1,10 @@
 Enums
 =====
 
-.. autoenum:: a2squery.ServerType
+.. autoclass:: a2squery.ServerType
     :members:
+    :undoc-members:
 
-.. autoenum:: a2squery.Environment
+.. autoclass:: a2squery.Environment
     :members:
+    :undoc-members:

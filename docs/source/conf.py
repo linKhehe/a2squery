@@ -10,7 +10,7 @@ import sys
 sys.path.insert(0, os.path.abspath('../..'))
 
 project = 'A2SQuery'
-copyright = '2022, Liam (linKhehe) Henderson'
+copyright = '2022-2026, Liam (linKhehe) Henderson'
 author = 'Liam (linKhehe) Henderson'
 
 collapse_navigation = False
@@ -21,7 +21,7 @@ collapse_navigation = False
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
-    "enum_tools.autoenum",
+    # "enum_tools.autoenum",
     "sphinx.ext.doctest"
 ]
 
@@ -31,7 +31,7 @@ exclude_patterns = []
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme_options = {
+html_theme_options = { # type: ignore
     "show_navbar_depth": 3,
     "home_page_in_toc": True
 }

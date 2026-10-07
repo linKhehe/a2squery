@@ -8,10 +8,11 @@ Docs
 
 Features
 --------
+- Supports synchronous and asynchronous querying.
 - Multi-packet response support for Source and GoldSource engines.
 - Supports BZIP2 compressed responses.
 - Handles MTU edge cases for Source games.
-- Fully type hinted (PEP 561 compliant) with modern design and `dataclass` response objects.
+- Fully type hinted (PEP 561 compliant) with modern design and dataclass response objects.
 - Enforces limits on challenge-response handshakes to prevent infinite recursion loops.
 - Zero dependencies.
 
@@ -25,8 +26,11 @@ Install the library via pypi with
 
     pip install a2squery
 
-Example
+Examples
 ---------------
+More [examples available on the docs](https://a2squery.readthedocs.io/en/latest/examples.html).
+
+#### Synchronous
 > When using `a2squery.A2SQuery` without a context manager.
 Remember to call `a2squery.A2SQuery.close()` when finished to close the socket.
 
@@ -38,6 +42,33 @@ with A2SQuery("127.0.0.1", 27015) as a2s:
     print(a2s.info())
     # print(a2s.rules())
     # print(a2s.players())
+
+    # SourceInfo(
+    #     protocol=17, name="Awp Bhop", map="awp_iceworld",
+    #     folder="csgo", game="Counter-Strike: Global Offensive",
+    #     app_id=730, players=43, max_players=64, bots=0,
+    #     server_type=ServerType.Dedicated, environment=Environment.Linux,
+    #     password=False, vac=True, version="1.38.4.4", extra_data_flag=177,
+    #     mode=None, witnesses=None, duration=None,
+    #     port=27015, steam_id=85568392924437989, spectator_port=None,
+    #     spectator_name=None, keywords="awp,bhop,a2squeryiscool", game_id=730
+    # )
+```
+
+#### Asynchronous
+
+> When using `a2squery.AsyncA2SQuery` without a context manager, you will need to call
+`a2squery.AsyncA2SQuery.connect()` to start the connection.
+Remember to call `a2squery.A2SQuery.close()` when finished to close the socket.
+
+```python
+
+from a2squery import AsyncA2SQuery
+
+async with A2SQuery("127.0.0.1", 27015) as a2s:
+    print(await a2s.info())
+    # print(await a2s.rules())
+    # print(await a2s.players())
 
     # SourceInfo(
     #     protocol=17, name="Awp Bhop", map="awp_iceworld",
