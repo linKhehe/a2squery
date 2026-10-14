@@ -22,7 +22,7 @@ Prerequisites
 
 Installation
 ------------
-Install the library via pypi with
+Install the library via PyPi with
 
     pip install a2squery
 
