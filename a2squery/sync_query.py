@@ -142,7 +142,7 @@ class A2SQuery(BaseA2SQuery):
                             type=response_type,
                             payload=parser.data[parser.index:]
                         )
-            except TimeoutError, OSError:
+            except (TimeoutError, OSError):
                 pass
 
         raise TimeoutError(f"Server failed to respond after {self.retries + 1} attempts.")
