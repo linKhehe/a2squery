@@ -25,6 +25,8 @@ extensions = [
     "sphinx.ext.doctest"
 ]
 
+autodoc_typehints = 'description'
+
 templates_path = ['_templates']
 exclude_patterns = []
 

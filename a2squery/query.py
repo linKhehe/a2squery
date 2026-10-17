@@ -28,11 +28,13 @@ class BatchQueryResponse:
 
 class BaseA2SQuery:
 
-    def __init__(self, host: str, port: int = 27015, timeout: float = 10, challenge_retries: int = 3):
+    def __init__(self, host: str, port: int = 27015, timeout: float = 1.0, retries: int = 2, challenge_retries: int = 3):
         self.host = host
         self.port = port
         self.timeout = timeout
+        self.retries = retries
         self.challenge_retries = challenge_retries
+        self._challenge: int = -1
 
     @staticmethod
     def _decode_batch_response(parser: Parser) -> BatchQueryResponse:

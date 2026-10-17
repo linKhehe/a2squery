@@ -36,6 +36,14 @@ class ResponseFormat(Enum):
 
     Simple = -1
     Batch = -2
+    Unknown = 0
+
+    @classmethod
+    def _missing_(cls, value: object):
+        if type(value) is str:
+            if value.lower() != value:
+                return cls(value.lower())
+        return cls.Unknown
 
 
 class ServerType(Enum):
