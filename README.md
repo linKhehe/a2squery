@@ -20,8 +20,8 @@ Features
     - Exponential back-off retrying of failed or invalid requests.
     - Per-request socket buffer flushing to eliminate cross-request race conditions and overflow.
     - Enforces limits on challenge handshakes to prevent infinite handshake loops.
-**Strict Typing (PEP 561)** - Fully type hinted with `dataclass` response structures. 
-**Standard Library Only** - Zero dependencies. 
+- **Strict Typing (PEP 561)** - Fully type hinted with `dataclass` response structures. 
+- **Standard Library Only** - Zero dependencies. 
 
 Prerequisites
 -------------
