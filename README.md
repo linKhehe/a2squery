@@ -22,7 +22,7 @@ Prerequisites
 
 Installation
 ------------
-Install the library via pypi with
+Install the library via PyPi with
 
     pip install a2squery
 
@@ -31,8 +31,8 @@ Examples
 More [examples available on the docs](https://a2squery.readthedocs.io/en/latest/examples.html).
 
 #### Synchronous
-> When using `a2squery.A2SQuery` without a context manager.
-Remember to call `a2squery.A2SQuery.close()` when finished to close the socket.
+> When using `a2squery.A2SQuery` without a context manager,
+remember to call `a2squery.A2SQuery.close()` when finished to close the socket.
 
 ```python
 
