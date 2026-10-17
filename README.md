@@ -2,19 +2,27 @@ A2SQuery [![A2SQuery](https://github.com/linKhehe/a2squery/actions/workflows/pyt
 ==========================================================================================================================================================================================================================================================================================================================================
 A2SQuery is a Python implementation of [Valve's A2S protocol](https://developer.valvesoftware.com/wiki/Server_queries).
 
+[View a demo application.](https://a2squery.linkhehe.com)
+
 Docs
 ----
 [View the full A2SQuery documentation here.](https://a2squery.readthedocs.io/en/latest/)
 
 Features
 --------
-- Supports synchronous and asynchronous querying.
-- Multi-packet response support for Source and GoldSource engines.
-- Supports BZIP2 compressed responses.
-- Handles MTU edge cases for Source games.
-- Fully type hinted (PEP 561 compliant) with modern design and dataclass response objects.
-- Enforces limits on challenge-response handshakes to prevent infinite recursion loops.
-- Zero dependencies.
+- **Sync and Async Implementations** - Includes fully featured synchronous and `asyncio`-driven networking engines with API parity. 
+- **Comprehensive API Coverage** - Full protocol implementation spanning the modern Source API and obsolete Source and GoldSource legacy versions. 
+    - Multi-packet batch assembly for split responses across engines.
+    - Supports BZIP2 compressed responses.
+    -  Handles MTU edge cases for early Source games.
+    - Catches and discards malformed or unwanted/extra packets.
+- **Network Fault Tolerance** - Resilient network I/O.
+    - Exponential back-off retrying of failed or invalid requests.
+    - Per-request socket buffer flushing to eliminate cross-request race conditions and overflow.
+    - Enforces limits on challenge handshakes to prevent infinite handshake loops.
+    - Saves challenge tokens for faster successive requests. 
+- **Strict Typing (PEP 561)** - Fully type hinted with `dataclass` response structures. 
+- **Standard Library Only** - Zero dependencies. 
 
 Prerequisites
 -------------
