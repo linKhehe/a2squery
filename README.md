@@ -16,10 +16,11 @@ Features
     - Supports BZIP2 compressed responses.
     -  Handles MTU edge cases for early Source games.
     - Catches and discards malformed or unwanted/extra packets.
-- **Network Fault Tolerance** - Resilient network I/O. 
+- **Network Fault Tolerance** - Resilient network I/O.
     - Exponential back-off retrying of failed or invalid requests.
     - Per-request socket buffer flushing to eliminate cross-request race conditions and overflow.
     - Enforces limits on challenge handshakes to prevent infinite handshake loops.
+    - Saves challenge tokens for faster successive requests. 
 - **Strict Typing (PEP 561)** - Fully type hinted with `dataclass` response structures. 
 - **Standard Library Only** - Zero dependencies. 
 
