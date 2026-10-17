@@ -28,6 +28,8 @@ class BatchQueryResponse:
 
 class BaseA2SQuery:
 
+    SIMPLE_HEADER = b'\xFF\xFF\xFF\xFF'
+
     def __init__(self, host: str, port: int = 27015, timeout: float = 1.0, retries: int = 2, challenge_retries: int = 3):
         self.host = host
         self.port = port
@@ -67,8 +69,8 @@ class BaseA2SQuery:
             compressed=compressed
         )
 
-    @staticmethod
-    def _assemble_batch(batch_responses: List[BatchQueryResponse]) -> Parser:
+    @classmethod
+    def _assemble_batch(cls, batch_responses: List[BatchQueryResponse]) -> Parser:
         batch_responses.sort(key=lambda r: r.packet_number)
         initial_response = batch_responses[0]
 
@@ -86,9 +88,9 @@ class BaseA2SQuery:
 
                 initial_response.payload = initial_response.payload[10 if has_mtu else 8:]
             else:
-                if initial_payload.startswith(b"\xFF\xFF\xFF\xFF"):
+                if initial_payload.startswith(cls.SIMPLE_HEADER):
                     has_mtu = False
-                elif initial_payload[2:6] == b"\xFF\xFF\xFF\xFF":
+                elif initial_payload[2:6] == cls.SIMPLE_HEADER:
                     has_mtu = True
                 elif ResponseType(initial_payload[0]) is not ResponseType.Unknown:
                     has_mtu = False
@@ -110,7 +112,7 @@ class BaseA2SQuery:
             except OSError as e:
                 raise InvalidResponse(f"Failed to decompress bzip payload: {e}")
 
-        if parser.data.startswith(b"\xFF\xFF\xFF\xFF"):
+        if parser.data.startswith(cls.SIMPLE_HEADER):
             parser.read_long()
 
         return parser

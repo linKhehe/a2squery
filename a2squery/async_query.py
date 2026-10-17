@@ -33,13 +33,13 @@ class AsyncA2SQuery(BaseA2SQuery):
 
     Args:
         host (str): The IP address or hostname of the game server WITHOUT the port.
-        port (int, optional): The query port of the server. Usually the same as the
+        port (Optional[int]): The query port of the server. Usually the same as the
             connection port. Defaults to 27015.
-        timeout (float, optional): Base time in seconds to wait for a response before
+        timeout (Optional[float]): Base time in seconds to wait for a response before
             retrying. Defaults to 1.0.
-        retries (int, optional): Number of attempts to retry after dropped requests or
+        retries (Optional[int]): Number of attempts to retry after dropped requests or
             invalid responses using exponential backoff. Defaults to 2.
-        challenge_retries (int, optional): Number of attempts to retry challenge handshake
+        challenge_retries (Optional[int]): Number of attempts to retry challenge handshake
             before giving up. Defaults to 3.
 
     Examples:
@@ -157,16 +157,16 @@ class AsyncA2SQuery(BaseA2SQuery):
         raise TimeoutError(f"Server failed to respond after {self.retries + 1} attempts.")
 
     async def connect(self) -> None:
-            """Starts the connection to the game server.
-            Must be closed with `AsyncA2SQuery.close()` when no longer in use."""
-            if self._transport is not None:
-                return
-    
-            loop = asyncio.get_running_loop()
-            self._transport, self._protocol = await loop.create_datagram_endpoint(
-                lambda: AsyncUDPProtocol(),
-                remote_addr=(self.host, self.port)
-            )
+        """Starts the connection to the game server.
+        Must be closed with `AsyncA2SQuery.close()` when no longer in use."""
+        if self._transport is not None:
+            return
+
+        loop = asyncio.get_running_loop()
+        self._transport, self._protocol = await loop.create_datagram_endpoint(
+            lambda: AsyncUDPProtocol(),
+            remote_addr=(self.host, self.port)
+        )
     
     async def close(self):
         """Closes the connection to the game server"""

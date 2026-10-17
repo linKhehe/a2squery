@@ -20,13 +20,13 @@ class A2SQuery(BaseA2SQuery):
 
     Args:
         host (str): The IP address or hostname of the game server WITHOUT the port.
-        port (int, optional): The query port of the server. Usually the same as the
+        port (Optional[int]): The query port of the server. Usually the same as the
             connection port. Defaults to 27015.
-        timeout (float, optional): Base time in seconds to wait for a response before
+        timeout (Optional[float]): Base time in seconds to wait for a response before
             retrying. Defaults to 1.0.
-        retries (int, optional): Number of attempts to retry after dropped requests or
+        retries (Optional[int]): Number of attempts to retry after dropped requests or
             invalid responses using exponential backoff. Defaults to 2.
-        challenge_retries (int, optional): Number of attempts to retry challenge handshake
+        challenge_retries (Optional[int]): Number of attempts to retry challenge handshake
             before giving up. Defaults to 3.
 
     Examples:

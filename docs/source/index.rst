@@ -30,8 +30,8 @@ or use a context manager. For this example, we will be using a context manager.
 
 .. tip::
 
-    When using :class:`a2squery.A2SQuery` without a context manager.
-    Remember to call :py:meth:`a2squery.A2SQuery.close` when finished.
+    When using :class:`a2squery.A2SQuery` without a context manager,
+    remember to call :py:meth:`a2squery.A2SQuery.close` when finished.
 
 .. doctest::
 
@@ -60,8 +60,8 @@ or use a context manager. For this example, we will be using a context manager.
 .. tip::
 
     When using :class:`a2squery.A2SQuery` without a context manager, 
-    you will need to call :py:meth:`a2squery.AsyncA2SQuery.connect` to start the connection.
-    Remember to call :py:meth:`a2squery.A2SQuery.close` when finished.
+    you will need to call :py:meth:`a2squery.AsyncA2SQuery.connect` to start the 
+    connection, and call :py:meth:`a2squery.A2SQuery.close` when finished.
 
 .. doctest::
 
