@@ -54,6 +54,7 @@ class AsyncA2SQuery(BaseA2SQuery):
 
         self._transport = None
         self._protocol = None
+        self._lock = None
 
     async def __aenter__(self):
         await self.connect()
@@ -163,10 +164,13 @@ class AsyncA2SQuery(BaseA2SQuery):
             return
 
         loop = asyncio.get_running_loop()
+
         self._transport, self._protocol = await loop.create_datagram_endpoint(
             lambda: AsyncUDPProtocol(),
             remote_addr=(self.host, self.port)
         )
+
+        self._lock = asyncio.Lock()
     
     async def close(self):
         """Closes the connection to the game server"""
@@ -174,6 +178,7 @@ class AsyncA2SQuery(BaseA2SQuery):
             self._transport.close()
             self._transport = None
             self._protocol = None
+            self._lock = None
 
     async def info(self) -> Union[SourceInfo, GoldSourceInfo]:
         """Query general information about the server.
@@ -182,11 +187,15 @@ class AsyncA2SQuery(BaseA2SQuery):
             Returns :class:`a2squery.SourceInfo` for Source servers, 
             or :class:`a2squery.GoldSourceInfo` for GoldSource servers.
         """
-        response = await self._request(
-            RequestType.Info, 
-            (ResponseType.InfoSource, ResponseType.InfoGoldSource), 
-            "Source Engine Query\x00"
-        )
+        if self._lock is None:
+            raise SocketClosed("Couldn't get lock. Did you run connect()?")
+
+        async with self._lock:
+            response = await self._request(
+                RequestType.Info, 
+                (ResponseType.InfoSource, ResponseType.InfoGoldSource), 
+                "Source Engine Query\x00"
+            )
 
         if response.type is ResponseType.InfoSource:
             return Parser.parse_source_info(response.payload)
@@ -209,7 +218,11 @@ class AsyncA2SQuery(BaseA2SQuery):
         Returns:
             List of :class:`a2ssquery.Player` objects
         """
-        response = await self._request(RequestType.Player, (ResponseType.Player,))
+        if self._lock is None:
+            raise SocketClosed("Couldn't get lock. Did you run connect()?")
+
+        async with self._lock:
+            response = await self._request(RequestType.Player, (ResponseType.Player,))
         return Parser.parse_players(response.payload)
 
     async def rules(self) -> Dict[str, str]:
@@ -221,5 +234,9 @@ class AsyncA2SQuery(BaseA2SQuery):
         Returns:
             Key/value dictionary of rules
         """
-        response = await self._request(RequestType.Rules, (ResponseType.Rules,))
+        if self._lock is None:
+            raise SocketClosed("Couldn't get lock. Did you run connect()?")
+
+        async with self._lock:
+            response = await self._request(RequestType.Rules, (ResponseType.Rules,))
         return Parser.parse_rules(response.payload)
