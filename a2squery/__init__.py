@@ -8,7 +8,7 @@ __title__ = "a2squery"
 __author__ = "Liam (linKhehe) Henderson"
 __license__ = "MIT"
 __copyright__ = "Copyright 2022-present Liam (linKhehe) Henderson"
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 
 __all__ = (
     "A2SQuery", "AsyncA2SQuery",
