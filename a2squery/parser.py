@@ -1,8 +1,9 @@
 import struct
-from typing import List, Dict
+from typing import Any, List, Dict
 
 from .data import SourceInfo, GoldSourceInfo, Player
 from .enums import ServerType, Environment
+from .exceptions import InvalidResponse
 
 __all__ = ("Parser",)
 
@@ -13,16 +14,36 @@ class Parser:
         self.index = 0
         self.data = data
 
-    def read_byte(self, advance: bool = True) -> int:
-        value = self.data[self.index]
+    def _unpack(self, fmt: str, advance: bool = True) -> Any:
+        try:
+            value = struct.unpack_from(fmt, self.data, self.index)[0]
+        except struct.error as exc:
+            raise InvalidResponse(f"Unexpected end of packet while unpacking '{fmt}'.") from exc
 
         if advance:
-            self.index = self.index + 1
+            self.index += struct.calcsize(fmt)
+
+        return value
+
+    def read_byte(self, advance: bool = True) -> int:
+        try:
+            value = self.data[self.index]
+        except IndexError as exc:
+            raise InvalidResponse("Unexpected end of packet while reading byte.") from exc
+
+        if advance:
+            self.index += 1
 
         return value
 
     def read_string(self) -> str:
-        end = self.data.index(b"\x00", self.index)
+        if self.index >= len(self.data):
+            raise InvalidResponse("Unexpected end of packet while reading string.")
+
+        try:
+            end = self.data.index(b"\x00", self.index)
+        except ValueError:
+            end = len(self.data)
 
         value = self.data[self.index: end].decode("utf-8", errors="replace")
         self.index = end + 1
@@ -30,10 +51,7 @@ class Parser:
         return value
 
     def read_short(self) -> int:
-        value = struct.unpack_from("<h", self.data, self.index)[0]
-        self.index = self.index + 2
-
-        return value
+        return self._unpack("<h")
 
     def read_char(self) -> str:
         return chr(self.read_byte())
@@ -42,24 +60,13 @@ class Parser:
         return bool(self.read_byte())
 
     def read_long(self, advance: bool = True) -> int:
-        value = struct.unpack_from("<l", self.data, self.index)[0]
-        
-        if advance:
-            self.index = self.index + 4
-
-        return value
+        return self._unpack("<l", advance)
 
     def read_long_long(self) -> int:
-        value = struct.unpack_from("<Q", self.data, self.index)[0]
-        self.index = self.index + 8
-
-        return value
+        return self._unpack("<Q")
 
     def read_float(self) -> float:
-        value = struct.unpack_from("<f", self.data, self.index)[0]
-        self.index = self.index + 4
-
-        return value
+        return self._unpack("<f")
 
     @classmethod
     def parse_source_info(cls, data: bytes) -> SourceInfo:
@@ -89,7 +96,7 @@ class Parser:
             duration = parser.read_byte()
 
         version = parser.read_string()
-        extra_data_flag = parser.read_byte()
+        extra_data_flag = 0
 
         port = None
         steam_id = None
@@ -98,21 +105,26 @@ class Parser:
         keywords = None
         game_id = None
 
-        if extra_data_flag & 0x80:
-            port = parser.read_short()
+        try:
+            extra_data_flag = parser.read_byte()
 
-        if extra_data_flag & 0x10:
-            steam_id = parser.read_long_long()
+            if extra_data_flag & 0x80:
+                port = parser.read_short()
 
-        if extra_data_flag & 0x40:
-            spectator_port = parser.read_short()
-            spectator_name = parser.read_string()
+            if extra_data_flag & 0x10:
+                steam_id = parser.read_long_long()
 
-        if extra_data_flag & 0x20:
-            keywords = parser.read_string()
+            if extra_data_flag & 0x40:
+                spectator_port = parser.read_short()
+                spectator_name = parser.read_string()
 
-        if extra_data_flag & 0x01:
-            game_id = parser.read_long_long()
+            if extra_data_flag & 0x20:
+                keywords = parser.read_string()
+
+            if extra_data_flag & 0x01:
+                game_id = parser.read_long_long()
+        except InvalidResponse:
+            pass
 
         return SourceInfo(
             protocol=protocol, name=name, map=info_map,
@@ -152,6 +164,7 @@ class Parser:
         if modded:
             mod_link = parser.read_string()
             mod_download_link = parser.read_string()
+            parser.read_byte()
             mod_version = parser.read_long()
             mod_size = parser.read_long()
             mod_multiplayer_only = parser.read_bool()
@@ -178,18 +191,21 @@ class Parser:
 
         players: List[Player] = []
 
-        while len(players) < player_count:
-            players.append(Player(
-                index=parser.read_byte(),
-                name=parser.read_string(),
-                score=parser.read_long(),
-                duration=parser.read_float()
-            ))
+        try:
+            while len(players) < player_count and parser.index < len(data):
+                players.append(Player(
+                    index=parser.read_byte(),
+                    name=parser.read_string(),
+                    score=parser.read_long(),
+                    duration=parser.read_float()
+                ))
 
-        if parser.index < len(data):
-            for player in players:
-                player.deaths = parser.read_long()
-                player.money = parser.read_long()
+            if parser.index < len(data):
+                for player in players:
+                    player.deaths = parser.read_long()
+                    player.money = parser.read_long()
+        except InvalidResponse:
+            pass
 
         return players
 
@@ -198,6 +214,17 @@ class Parser:
         parser = cls(data)
 
         rule_count = parser.read_short()
-        rules = dict((parser.read_string(), parser.read_string()) for _ in range(rule_count))
+        rules: Dict[str, str] = {}
+
+        try:
+            for _ in range(rule_count):
+                if parser.index >= len(data):
+                    break
+                key = parser.read_string()
+                value = parser.read_string()
+                rules[key] = value
+        except InvalidResponse:
+            pass
 
         return rules
+

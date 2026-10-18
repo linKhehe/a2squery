@@ -32,6 +32,17 @@ class ResponseType(Enum):
         return cls.Unknown
 
 
+class _CaseInsensitiveStrEnum(Enum):
+
+    @classmethod
+    def _missing_(cls, value: object):
+        if isinstance(value, str):
+            lower = value.lower()
+            if lower != value:
+                return cls(lower)
+        return getattr(cls, "Unknown")
+
+
 class ResponseFormat(Enum):
 
     Simple = -1
@@ -40,29 +51,19 @@ class ResponseFormat(Enum):
 
     @classmethod
     def _missing_(cls, value: object):
-        if type(value) is str:
-            if value.lower() != value:
-                return cls(value.lower())
         return cls.Unknown
 
 
-class ServerType(Enum):
+class ServerType(_CaseInsensitiveStrEnum):
 
     Dedicated = "d"
     NonDedicated = "l"
-    HLTV = "p"
-    SourceTV = "P"
+    SourceTV = "p"
+    HLTV = "P"
     Unknown = "unknown"
 
-    @classmethod
-    def _missing_(cls, value: object):
-        if type(value) is str:
-            if value.lower() != value:
-                return cls(value.lower())
-        return cls.Unknown
 
-
-class Environment(Enum):
+class Environment(_CaseInsensitiveStrEnum):
 
     Linux = "l"
     Windows = "w"
@@ -71,9 +72,7 @@ class Environment(Enum):
 
     @classmethod
     def _missing_(cls, value: object):
-        if type(value) is str:
-            if value == "o":
-                return cls.Mac
-            if value.lower() != value:
-                return cls(value.lower())
-        return cls.Unknown
+        if isinstance(value, str) and value.lower() == "o":
+            return cls.Mac
+        return super()._missing_(value)
+

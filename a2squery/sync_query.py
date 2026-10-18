@@ -24,8 +24,8 @@ class A2SQuery(BaseA2SQuery):
             connection port. Defaults to 27015.
         timeout (Optional[float]): Base time in seconds to wait for a response before
             retrying. Defaults to 1.0.
-        retries (Optional[int]): Number of attempts to retry after dropped requests or
-            invalid responses using exponential backoff. Defaults to 2.
+        retries (Optional[int]): Number of attempts to retry after dropped requests
+            using exponential backoff. Defaults to 2.
         challenge_retries (Optional[int]): Number of attempts to retry challenge handshake
             before giving up. Defaults to 3.
 
@@ -47,8 +47,6 @@ class A2SQuery(BaseA2SQuery):
         return self
 
     def __exit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]):
-        if exc_val:
-            raise exc_val
         self.close()
 
     def _recv(self, timeout: float) -> bytes:
@@ -59,19 +57,22 @@ class A2SQuery(BaseA2SQuery):
         return self._socket.recv(65536)
 
     def _receive_batch(self, initial_parser: Parser, end_time: float) -> Parser:
-        batch_responses = [self._decode_batch_response(initial_parser)]
-        
-        while len(batch_responses) < batch_responses[0].total_packets:
-            time_left = end_time - time.time()
+        initial_response = self._decode_batch_response(initial_parser)
+        batch_responses = {initial_response.packet_number: initial_response}
+
+        while len(batch_responses) < initial_response.total_packets:
+            time_left = end_time - time.monotonic()
             if time_left <= 0:
                 raise TimeoutError("Timed out receiving expected batch packets.")
 
             parser = Parser(self._recv(time_left))
 
             if ResponseFormat(parser.read_long()) is ResponseFormat.Batch:
-                batch_responses.append(self._decode_batch_response(parser))
+                batch_response = self._decode_batch_response(parser)
+                if batch_response.response_id == initial_response.response_id:
+                    batch_responses[batch_response.packet_number] = batch_response
 
-        return self._assemble_batch(batch_responses)
+        return self._assemble_batch(list(batch_responses.values()))
 
     def _flush_socket(self):
         if self._socket is None:
@@ -85,7 +86,7 @@ class A2SQuery(BaseA2SQuery):
             pass
         self._socket.setblocking(True)
 
-    def _request(self, request_type: RequestType, expected_responses: Tuple[ResponseType, ...], body: Optional[str] = None, challenge: Optional[int] = None, _challenge_retries: int = 0) -> QueryResponse:
+    def _request(self, request_type: RequestType, expected_responses: Tuple[ResponseType, ...], body: Optional[str] = None, challenge: Optional[int] = None) -> QueryResponse:
         if self._socket is None:
             raise SocketClosed("The socket has been closed. No more requests can be made.")
 
@@ -96,6 +97,7 @@ class A2SQuery(BaseA2SQuery):
             challenge = self._challenge
 
         request = self._build_request(request_type, body, challenge)
+        challenge_retries = 0
 
         for attempt in range(self.retries + 1):
             self._flush_socket()
@@ -103,37 +105,36 @@ class A2SQuery(BaseA2SQuery):
             self._socket.send(request)
 
             current_timeout = self.timeout * (2 ** attempt)
-            end_time = time.time() + current_timeout
+            end_time = time.monotonic() + current_timeout
 
             try:
                 while True:
-                    time_left = end_time - time.time()
+                    time_left = end_time - time.monotonic()
                     if time_left <= 0:
                         raise TimeoutError()
 
                     parser = Parser(self._recv(time_left))
-
                     response_format = ResponseFormat(parser.read_long())
-                
+
+                    if response_format is ResponseFormat.Unknown:
+                        continue
+
                     if response_format is ResponseFormat.Batch:
                         parser = self._receive_batch(parser, end_time)
 
                     response_type = ResponseType(parser.read_byte())
 
                     if response_type is ResponseType.Challenge:
-                        if _challenge_retries >= self.challenge_retries:
+                        if challenge_retries >= self.challenge_retries:
                             raise InvalidResponse("Server requested too many challenges.")
 
-                        self._challenge = parser.read_long(advance=False)
+                        challenge_retries += 1
+                        self._challenge = parser.read_long()
+                        request = self._build_request(request_type, body, self._challenge)
 
-                        self._socket.settimeout(self.timeout)
-                        return self._request(
-                            request_type, 
-                            expected_responses,
-                            body, 
-                            challenge=self._challenge, 
-                            _challenge_retries=_challenge_retries + 1
-                        )
+                        self._socket.send(request)
+                        end_time = time.monotonic() + current_timeout
+                        continue
 
                     if response_type in expected_responses:
                         self._socket.settimeout(self.timeout)
@@ -149,11 +150,9 @@ class A2SQuery(BaseA2SQuery):
 
     def close(self) -> None:
         """Close the underlying socket. All requests after this will fail."""
-        if self._socket is None:
-            raise SocketClosed("The socket is already closed.")
-
-        self._socket.close()
-        self._socket = None
+        if self._socket is not None:
+            self._socket.close()
+            self._socket = None
 
     def info(self) -> Union[SourceInfo, GoldSourceInfo]:
         """Query general information about the server.
@@ -163,10 +162,7 @@ class A2SQuery(BaseA2SQuery):
             or :class:`a2squery.GoldSourceInfo` for GoldSource servers.
         """
         response = self._request(RequestType.Info, (ResponseType.InfoGoldSource, ResponseType.InfoSource), "Source Engine Query\x00")
-
-        if response.type is ResponseType.InfoSource:
-            return Parser.parse_source_info(response.payload)
-        return Parser.parse_goldsource_info(response.payload)
+        return self._parse_info_response(response)
 
     def players(self) -> List[Player]:
         """Query the server's current players/bots.
@@ -174,7 +170,7 @@ class A2SQuery(BaseA2SQuery):
         This is an alias of A2SQuery.player().
 
         Returns:
-            List of :class:`a2ssquery.Player` objects
+            List of :class:`a2squery.Player` objects
         """
         return self.player()
 
@@ -182,7 +178,7 @@ class A2SQuery(BaseA2SQuery):
         """Query the server's current players/bots.
 
         Returns:
-            List of :class:`a2ssquery.Player` objects
+            List of :class:`a2squery.Player` objects
         """
         response = self._request(RequestType.Player, (ResponseType.Player,))
         return Parser.parse_players(response.payload)
@@ -198,3 +194,4 @@ class A2SQuery(BaseA2SQuery):
         """
         response = self._request(RequestType.Rules, (ResponseType.Rules,))
         return Parser.parse_rules(response.payload)
+

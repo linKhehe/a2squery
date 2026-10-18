@@ -1,8 +1,9 @@
 import bz2
 import struct
 from dataclasses import dataclass
-from typing import List
+from typing import List, Union
 
+from .data import SourceInfo, GoldSourceInfo
 from .exceptions import InvalidResponse
 from .parser import Parser
 from .enums import RequestType, ResponseType, ResponseFormat, BatchResponseEngine
@@ -19,6 +20,7 @@ class QueryResponse:
 @dataclass
 class BatchQueryResponse:
 
+    response_id: int
     payload: bytes
     packet_number: int
     total_packets: int
@@ -40,14 +42,16 @@ class BaseA2SQuery:
 
     @staticmethod
     def _decode_batch_response(parser: Parser) -> BatchQueryResponse:
-        compressed = bool(parser.read_long() & 0x80000000)
+        raw_id = parser.read_long()
+        compressed = bool(raw_id & 0x80000000)
+        response_id = raw_id & 0x7FFFFFFF
         index_or_total = parser.read_byte()
         next_byte = parser.read_byte(advance=False)
 
         upper_packet = index_or_total >> 4
         lower_packet = index_or_total & 0x0F
 
-        if upper_packet > 0 :
+        if upper_packet > 0:
             packet_number = upper_packet
             total_packets = lower_packet
             engine = BatchResponseEngine.GoldSource
@@ -61,7 +65,11 @@ class BaseA2SQuery:
                 packet_number = parser.read_byte()
                 engine = BatchResponseEngine.Source
 
+        if total_packets <= 0:
+            raise InvalidResponse("Batch response reported zero total packets.")
+
         return BatchQueryResponse(
+            response_id=response_id,
             payload=parser.data[parser.index:],
             packet_number=packet_number,
             total_packets=total_packets,
@@ -92,7 +100,7 @@ class BaseA2SQuery:
                     has_mtu = False
                 elif initial_payload[2:6] == cls.SIMPLE_HEADER:
                     has_mtu = True
-                elif ResponseType(initial_payload[0]) is not ResponseType.Unknown:
+                elif len(initial_payload) >= 1 and ResponseType(initial_payload[0]) is not ResponseType.Unknown:
                     has_mtu = False
                 elif len(initial_payload) >= 3 and ResponseType(initial_payload[2]) is not ResponseType.Unknown:
                     has_mtu = True
@@ -100,7 +108,7 @@ class BaseA2SQuery:
             if has_mtu:
                 for response in batch_responses:
                     if initial_response.compressed and response.packet_number == 0:
-                        continue # already handled the first compressed packet above
+                        continue  # already handled the first compressed packet above
 
                     response.payload = response.payload[2:]
 
@@ -109,14 +117,21 @@ class BaseA2SQuery:
         if initial_response.compressed:
             try:
                 parser.data = bz2.decompress(parser.data)
-            except OSError as e:
-                raise InvalidResponse(f"Failed to decompress bzip payload: {e}")
+            except (OSError, EOFError) as e:
+                raise InvalidResponse(f"Failed to decompress bzip payload: {e}") from e
 
         if parser.data.startswith(cls.SIMPLE_HEADER):
             parser.read_long()
 
         return parser
-    
+
     @staticmethod
-    def _build_request(request_type: RequestType, body: str, challenge: int):
+    def _build_request(request_type: RequestType, body: str, challenge: int) -> bytes:
         return struct.pack(f"<lB{len(body)}sl", -1, request_type.value, body.encode(), challenge)
+
+    @staticmethod
+    def _parse_info_response(response: QueryResponse) -> Union[SourceInfo, GoldSourceInfo]:
+        if response.type is ResponseType.InfoSource:
+            return Parser.parse_source_info(response.payload)
+        return Parser.parse_goldsource_info(response.payload)
+

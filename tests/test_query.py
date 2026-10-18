@@ -1,12 +1,13 @@
 import asyncio
 import socket
-import unittest
-import typing
-from a2squery import A2SQuery, AsyncA2SQuery, SourceInfo, GoldSourceInfo, Player
 import threading
+import typing
+import unittest
+from a2squery import A2SQuery, AsyncA2SQuery, SourceInfo, GoldSourceInfo, Player
+
 
 @typing.no_type_check
-def async_test(coro): 
+def async_test(coro):
     @typing.no_type_check
     def wrapper(self, *args, **kwargs):
         loop = asyncio.new_event_loop()
@@ -19,6 +20,8 @@ def async_test(coro):
 
 
 class A2SMockServer:
+
+    CHALLENGE_RESPONSE = b"\xFF\xFF\xFF\xFF\x41\x0A\x08\x5E\xEA"
 
     def __init__(self, host: str):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -41,24 +44,22 @@ class A2SMockServer:
         self._socket.close()
 
     def recv(self):
-        while True:
-            if self._should_exit:
-                return
-
+        while not self._should_exit:
             try:
                 data, client = self._socket.recvfrom(65535)
             except socket.timeout:
                 continue
-            except OSError as exception:
+            except OSError:
                 if self._should_exit:
                     return
-                raise exception
+                raise
 
-            if data == b"\xff\xff\xff\xffTSource Engine Query\x00\xff\xff\xff\xff":
-                self._socket.sendto(
-                    b"\xFF\xFF\xFF\xFF\x41\x0A\x08\x5E\xEA",
-                    client
-                )
+            if data in (
+                b"\xff\xff\xff\xffTSource Engine Query\x00\xff\xff\xff\xff",
+                b"\xff\xff\xff\xffU\xff\xff\xff\xff",
+                b"\xff\xff\xff\xff\x56\xff\xff\xff\xff",
+            ):
+                self._socket.sendto(self.CHALLENGE_RESPONSE, client)
             elif data == b"\xff\xff\xff\xffTSource Engine Query\x00\x0A\x08\x5E\xEA":
                 if self._use_goldsource_info:
                     self._socket.sendto(
@@ -70,19 +71,9 @@ class A2SMockServer:
                         b"\xff\xff\xff\xffI\x11Server Name\x00Map Name\x00Folder\x00Game\x00\x8a\x84'7\x00dw\x00\x001.64.144629\x00\xb1\xfe\x08\x06<\x88\x85\xf1S@\x01keywords\x00\x8a\x84\x00\x00\x00\x00\x00\x00",
                         client
                     )
-            elif data == b"\xff\xff\xff\xffU\xff\xff\xff\xff":
-                self._socket.sendto(
-                    b"\xFF\xFF\xFF\xFF\x41\x0A\x08\x5E\xEA",
-                    client
-                )
             elif data == b"\xff\xff\xff\xffU\x0A\x08\x5E\xEA":
                 self._socket.sendto(
                     b"\xff\xff\xff\xffD\x04\x00Player 0\x00\x03\x00\x00\x00\x00\xa8\xc1E\x00Player 1\x00\x00\x00\x00\x00\x00@8C\x00Player 2\x00\x00\x00\x00\x00f\xc2\xedI\x00Player 3\x00\x00\x00\x00\x00\x00\x00\x0eb",
-                    client
-                )
-            elif data == b"\xff\xff\xff\xff\x56\xff\xff\xff\xff":
-                self._socket.sendto(
-                    b"\xFF\xFF\xFF\xFF\x41\x0A\x08\x5E\xEA",
                     client
                 )
             elif data == b"\xff\xff\xff\xff\x56\x0A\x08\x5E\xEA":
@@ -110,32 +101,44 @@ class TestAsyncA2SQuery(unittest.TestCase):
     async def test_async_source_info(self):
         self.server.set_use_goldsource_info(False)
         async with AsyncA2SQuery("127.0.0.1", self.server.port) as a2s:
-            self.assertTrue(isinstance(await a2s.info(), SourceInfo))
-            self.assertTrue((await a2s.info()).name == "Server Name")
+            info = await a2s.info()
+            self.assertIsInstance(info, SourceInfo)
+            self.assertEqual(info.name, "Server Name")
 
     @async_test
     async def test_async_goldsource_info(self):
         self.server.set_use_goldsource_info(True)
         async with AsyncA2SQuery("127.0.0.1", self.server.port) as a2s:
-            self.assertTrue(isinstance(await a2s.info(), GoldSourceInfo))
-            self.assertTrue((await a2s.info()).name == "name")
+            info = await a2s.info()
+            self.assertIsInstance(info, GoldSourceInfo)
+            assert isinstance(info, GoldSourceInfo)
+            self.assertEqual(info.name, "name")
+            self.assertEqual(info.mod_version, 1)
+            self.assertEqual(info.mod_size, 0)
+            self.assertTrue(info.mod_multiplayer_only)
+            self.assertFalse(info.mod_uses_custom_dll)
+            self.assertTrue(info.vac)
+            self.assertEqual(info.bots, 1)
 
     @async_test
     async def test_async_players(self):
         async with AsyncA2SQuery("127.0.0.1", self.server.port) as a2s:
-            self.assertTrue(isinstance((await a2s.players())[1], Player)) # type: ignore
-            self.assertTrue((await a2s.players())[0].name == "Player 0")
+            players = await a2s.players()
+            self.assertIsInstance(players[1], Player)
+            self.assertEqual(players[0].name, "Player 0")
 
     @async_test
     async def test_async_rules(self):
         async with AsyncA2SQuery("127.0.0.1", self.server.port) as a2s:
-            self.assertTrue((await a2s.rules()).get("a2squery") == "bruh momentum")
+            rules = await a2s.rules()
+            self.assertEqual(rules.get("a2squery"), "bruh momentum")
 
     @async_test
     async def test_async_compression(self):
         async with AsyncA2SQuery("127.0.0.1", self.server.port) as a2s:
             self.server.set_use_compression(True)
-            self.assertTrue((await a2s.rules()).get("a2squery") == "compressed_success")
+            rules = await a2s.rules()
+            self.assertEqual(rules.get("a2squery"), "compressed_success")
 
     def tearDown(self):
         self.server.close()
@@ -152,24 +155,36 @@ class TestA2SQuery(unittest.TestCase):
 
     def test_source_info(self):
         self.server.set_use_goldsource_info(False)
-        self.assertTrue(isinstance(self.a2s.info(), SourceInfo))
-        self.assertTrue(self.a2s.info().name == "Server Name")
+        info = self.a2s.info()
+        self.assertIsInstance(info, SourceInfo)
+        self.assertEqual(info.name, "Server Name")
 
     def test_goldsource_info(self):
         self.server.set_use_goldsource_info(True)
-        self.assertTrue(isinstance(self.a2s.info(), GoldSourceInfo))
-        self.assertTrue(self.a2s.info().name == "name")
+        info = self.a2s.info()
+        self.assertIsInstance(info, GoldSourceInfo)
+        assert isinstance(info, GoldSourceInfo)
+        self.assertEqual(info.name, "name")
+        self.assertEqual(info.mod_version, 1)
+        self.assertEqual(info.mod_size, 0)
+        self.assertTrue(info.mod_multiplayer_only)
+        self.assertFalse(info.mod_uses_custom_dll)
+        self.assertTrue(info.vac)
+        self.assertEqual(info.bots, 1)
 
     def test_players(self):
-        self.assertTrue(isinstance(self.a2s.players()[1], Player)) # type: ignore
-        self.assertTrue(self.a2s.players()[0].name == "Player 0")
+        players = self.a2s.players()
+        self.assertIsInstance(players[1], Player)
+        self.assertEqual(players[0].name, "Player 0")
 
     def test_rules(self):
-        self.assertTrue(self.a2s.rules().get("a2squery") == "bruh momentum")
+        rules = self.a2s.rules()
+        self.assertEqual(rules.get("a2squery"), "bruh momentum")
 
     def test_compression(self):
         self.server.set_use_compression(True)
-        self.assertTrue(self.a2s.rules().get("a2squery") == "compressed_success")
+        rules = self.a2s.rules()
+        self.assertEqual(rules.get("a2squery"), "compressed_success")
 
     def tearDown(self):
         self.server.close()
@@ -178,3 +193,4 @@ class TestA2SQuery(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

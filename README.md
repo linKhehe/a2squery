@@ -67,13 +67,13 @@ with A2SQuery("127.0.0.1", 27015) as a2s:
 
 > When using `a2squery.AsyncA2SQuery` without a context manager, you will need to call
 `a2squery.AsyncA2SQuery.connect()` to start the connection.
-Remember to call `a2squery.A2SQuery.close()` when finished to close the socket.
+Remember to call `a2squery.AsyncA2SQuery.close()` when finished to close the socket.
 
 ```python
 
 from a2squery import AsyncA2SQuery
 
-async with A2SQuery("127.0.0.1", 27015) as a2s:
+async with AsyncA2SQuery("127.0.0.1", 27015) as a2s:
     print(await a2s.info())
     # print(await a2s.rules())
     # print(await a2s.players())

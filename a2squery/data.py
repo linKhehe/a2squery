@@ -28,12 +28,12 @@ class SourceInfo:
         version (str): The version of the game installed on the server.
         extra_data_flag (int): This field specifies what extra data is included in the packet.
 
-        port (int): The server's game port.
-        steam_id (int): The server's steam ID.
-        spectator_port (int): The spectator port used for SourceTV.
-        spectator_name (str): The name of the SourceTV spectator server.
-        keywords (str): Tags used to describe the server.
-        game_id (int): The server's 64-bit game ID.
+        port (Optional[int]): The server's game port.
+        steam_id (Optional[int]): The server's steam ID.
+        spectator_port (Optional[int]): The spectator port used for SourceTV.
+        spectator_name (Optional[str]): The name of the SourceTV spectator server.
+        keywords (Optional[str]): Tags used to describe the server.
+        game_id (Optional[int]): The server's 64-bit game ID.
 
         mode (Optional[int]):
             The game mode the server is currently running.
@@ -107,12 +107,12 @@ class GoldSourceInfo:
         address (str): The IP address and port of the server.
         name (str): The hostname of the server. This is what you see on a server list.
         map (str): The current map.
-        folder (str): The name of the folder containing the game files. (ex. Counter-Strike: Global Offensive servers will return "csgo")
+        folder (str): The name of the folder containing the game files. (ex. Counter-Strike 1.6 servers will return "cstrike")
         game (str): The full name of the game the server is running.
         players (int): The number of players on the server. This may include bots.
         max_players (int): The max number of players allowed.
         protocol (int): The version of the protocol used by the server.
-        server_type (:class:`a2squery.enums.ServerType`): The type of server. Servers can be Dedicated, NonDedicated, or SourceTV.
+        server_type (:class:`a2squery.enums.ServerType`): The type of server. Servers can be Dedicated, NonDedicated, or HLTV.
         environment (:class:`a2squery.enums.Environment`): The operating system the server is running. For GoldSource servers this can be Linux or Windows.
         password (bool): Whether of not the server is password locked.
         modded (bool): Indicates if the server is a Half-Life mod or not.
