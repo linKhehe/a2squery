@@ -2,6 +2,7 @@ from .async_query import AsyncA2SQuery
 from .sync_query import A2SQuery
 from .data import SourceInfo, GoldSourceInfo, Player
 from .enums import ServerType, Environment
+from .exceptions import SourceQueryException, InvalidResponse, SocketClosed
 
 __title__ = "a2squery"
 __author__ = "Liam (linKhehe) Henderson"
@@ -10,7 +11,8 @@ __copyright__ = "Copyright 2022-present Liam (linKhehe) Henderson"
 __version__ = "1.2.1"
 
 __all__ = (
-    "A2SQuery", "SourceInfo", "GoldSourceInfo",
-    "Player", "ServerType", "Environment",
-    "AsyncA2SQuery"
+    "A2SQuery", "AsyncA2SQuery",
+    "SourceInfo", "GoldSourceInfo", "Player",
+    "ServerType", "Environment",
+    "SourceQueryException", "InvalidResponse", "SocketClosed"
 )

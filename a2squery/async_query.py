@@ -37,14 +37,14 @@ class AsyncA2SQuery(BaseA2SQuery):
             connection port. Defaults to 27015.
         timeout (Optional[float]): Base time in seconds to wait for a response before
             retrying. Defaults to 1.0.
-        retries (Optional[int]): Number of attempts to retry after dropped requests or
-            invalid responses using exponential backoff. Defaults to 2.
+        retries (Optional[int]): Number of attempts to retry after dropped requests
+            using exponential backoff. Defaults to 2.
         challenge_retries (Optional[int]): Number of attempts to retry challenge handshake
             before giving up. Defaults to 3.
 
     Examples:
 
-        >>> async with A2SQuery("127.0.0.1") as a2s:
+        >>> async with AsyncA2SQuery("127.0.0.1") as a2s:
         ...     server_info = await a2s.info()
         ...     print(server_info.name)
     """
@@ -61,8 +61,6 @@ class AsyncA2SQuery(BaseA2SQuery):
         return self
 
     async def __aexit__(self, exc_type: Optional[Type[BaseException]], exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]):
-        if exc_val:
-            raise exc_val
         await self.close()
 
     async def _recv(self, timeout: float) -> bytes:
@@ -80,23 +78,26 @@ class AsyncA2SQuery(BaseA2SQuery):
         raise result
 
     async def _receive_batch(self, initial_parser: Parser, end_time: float) -> Parser:
-        batch_responses = [self._decode_batch_response(initial_parser)]
-        
-        while len(batch_responses) < batch_responses[0].total_packets:
-            time_left = end_time - time.time()
+        initial_response = self._decode_batch_response(initial_parser)
+        batch_responses = {initial_response.packet_number: initial_response}
+
+        while len(batch_responses) < initial_response.total_packets:
+            time_left = end_time - time.monotonic()
             if time_left <= 0:
                 raise TimeoutError("Timed out receiving expected batch responses.")
 
             response_data = await self._recv(time_left)
-            
+
             parser = Parser(response_data)
 
             if ResponseFormat(parser.read_long()) is ResponseFormat.Batch:
-                batch_responses.append(self._decode_batch_response(parser))
+                batch_response = self._decode_batch_response(parser)
+                if batch_response.response_id == initial_response.response_id:
+                    batch_responses[batch_response.packet_number] = batch_response
 
-        return self._assemble_batch(batch_responses)
+        return self._assemble_batch(list(batch_responses.values()))
 
-    async def _request(self, request_type: RequestType, expected_responses: Tuple[ResponseType, ...], body: Optional[str] = None, challenge: Optional[int] = None, _challenge_retries: int = 0) -> QueryResponse:
+    async def _request(self, request_type: RequestType, expected_responses: Tuple[ResponseType, ...], body: Optional[str] = None, challenge: Optional[int] = None) -> QueryResponse:
         if self._transport is None or self._protocol is None:
             raise SocketClosed("The socket has been closed. No more requests can be made.")
 
@@ -107,25 +108,28 @@ class AsyncA2SQuery(BaseA2SQuery):
             challenge = self._challenge
 
         request = self._build_request(request_type, body, challenge)
+        challenge_retries = 0
 
         for attempt in range(self.retries + 1):
             while not self._protocol.queue.empty():
                 self._protocol.queue.get_nowait()
 
             self._transport.sendto(request)
-            
+
             current_timeout = self.timeout * (2 ** attempt)
-            end_time = time.time() + current_timeout
+            end_time = time.monotonic() + current_timeout
 
             try:
                 while True:
-                    time_left = end_time - time.time()
+                    time_left = end_time - time.monotonic()
                     if time_left <= 0:
                         raise TimeoutError()
 
                     parser = Parser(await self._recv(time_left))
-
                     response_format = ResponseFormat(parser.read_long())
+
+                    if response_format is ResponseFormat.Unknown:
+                        continue
 
                     if response_format is ResponseFormat.Batch:
                         parser = await self._receive_batch(parser, end_time)
@@ -133,18 +137,16 @@ class AsyncA2SQuery(BaseA2SQuery):
                     response_type = ResponseType(parser.read_byte())
 
                     if response_type is ResponseType.Challenge:
-                        if _challenge_retries >= self.challenge_retries:
+                        if challenge_retries >= self.challenge_retries:
                             raise InvalidResponse("Server requested too many challenges.")
 
-                        self._challenge = parser.read_long(advance=False)
+                        challenge_retries += 1
+                        self._challenge = parser.read_long()
+                        request = self._build_request(request_type, body, self._challenge)
 
-                        return await self._request(
-                            request_type, 
-                            expected_responses,
-                            body, 
-                            challenge=self._challenge, 
-                            _challenge_retries=_challenge_retries + 1
-                        )
+                        self._transport.sendto(request)
+                        end_time = time.monotonic() + current_timeout
+                        continue
 
                     if response_type in expected_responses:
                         return QueryResponse(
@@ -171,7 +173,7 @@ class AsyncA2SQuery(BaseA2SQuery):
         )
 
         self._lock = asyncio.Lock()
-    
+
     async def close(self):
         """Closes the connection to the game server"""
         if self._transport:
@@ -192,15 +194,12 @@ class AsyncA2SQuery(BaseA2SQuery):
 
         async with self._lock:
             response = await self._request(
-                RequestType.Info, 
-                (ResponseType.InfoSource, ResponseType.InfoGoldSource), 
+                RequestType.Info,
+                (ResponseType.InfoSource, ResponseType.InfoGoldSource),
                 "Source Engine Query\x00"
             )
 
-        if response.type is ResponseType.InfoSource:
-            return Parser.parse_source_info(response.payload)
-
-        return Parser.parse_goldsource_info(response.payload)
+        return self._parse_info_response(response)
 
     async def players(self) -> List[Player]:
         """Query the server's current players/bots.
@@ -208,7 +207,7 @@ class AsyncA2SQuery(BaseA2SQuery):
         This is an alias of A2SQuery.player().
 
         Returns:
-            List of :class:`a2ssquery.Player` objects
+            List of :class:`a2squery.Player` objects
         """
         return await self.player()
 
@@ -216,7 +215,7 @@ class AsyncA2SQuery(BaseA2SQuery):
         """Query the server's current players/bots.
         
         Returns:
-            List of :class:`a2ssquery.Player` objects
+            List of :class:`a2squery.Player` objects
         """
         if self._lock is None:
             raise SocketClosed("Couldn't get lock. Did you run connect()?")
@@ -240,3 +239,4 @@ class AsyncA2SQuery(BaseA2SQuery):
         async with self._lock:
             response = await self._request(RequestType.Rules, (ResponseType.Rules,))
         return Parser.parse_rules(response.payload)
+
